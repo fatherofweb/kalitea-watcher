@@ -2,7 +2,7 @@ import { adapters } from './sources/registry.js';
 import { normalize } from './core/normalize.js';
 import { dedupe } from './core/dedupe.js';
 import { computeAlerts } from './core/diff.js';
-import { isRelevant } from './core/threshold.js';
+import { isRelevant, isFutureDeparture } from './core/threshold.js';
 import type { RawOffer, DedupedOffer } from './core/types.js';
 import { createRun, insertOffers, finishRun } from './store/snapshot.js';
 import { loadOfferState, upsertOfferState } from './store/offerState.js';
@@ -65,8 +65,10 @@ async function main(): Promise<void> {
     await notify(formatAllFailed(failed));
   }
 
+  const today = new Date().toISOString().slice(0, 10);
   const deduped = dedupe(collected.map(normalize));
-  const relevant = deduped.filter(isRelevant);
+  // relevantno = 1/2 jedinica + polazak u budućnosti (sajtovi drže celu sezonu)
+  const relevant = deduped.filter((o) => isRelevant(o) && isFutureDeparture(o.dateFrom, today));
 
   const offerState = DRY ? new Map() : await loadOfferState();
   const alertState = DRY ? new Map() : await loadAlertState();

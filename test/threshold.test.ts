@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { isRelevant, isBelowThreshold } from '../src/core/threshold.js';
+import { isRelevant, isBelowThreshold, isFutureDeparture } from '../src/core/threshold.js';
 import type { DedupedOffer } from '../src/core/types.js';
 
 const o = (p: Partial<DedupedOffer>): DedupedOffer => ({
@@ -28,4 +28,11 @@ test('relevant = 1/2 (transport not filtered)', () => {
 test('below threshold', () => {
   expect(isBelowThreshold(o({ pppPerNight: 37 }), 38)).toBe(true);
   expect(isBelowThreshold(o({ pppPerNight: 38 }), 38)).toBe(false);
+});
+test('future departure filter (drops past)', () => {
+  const today = '2026-07-17';
+  expect(isFutureDeparture('2026-05-25', today)).toBe(false); // prošlost
+  expect(isFutureDeparture('2026-07-17', today)).toBe(true); // danas
+  expect(isFutureDeparture('2026-08-03', today)).toBe(true); // budućnost
+  expect(isFutureDeparture('19. jul', today)).toBe(true); // ne-ISO → zadrži
 });

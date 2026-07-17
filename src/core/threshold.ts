@@ -10,3 +10,10 @@ export function isRelevant(o: DedupedOffer): boolean {
 export function isBelowThreshold(o: DedupedOffer, threshold: number): boolean {
   return o.pppPerNight < threshold;
 }
+
+// Izbaci polaske u prošlosti (sajtovi drže celu sezonsku tabelu maj–sept).
+// ISO datum → poredi sa danas; ne-ISO (nepoznat) → zadrži (ne znamo).
+export function isFutureDeparture(dateFrom: string, todayISO: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) return true;
+  return dateFrom >= todayISO;
+}
