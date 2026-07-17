@@ -113,8 +113,10 @@ HTML fixture-om bez ijednog live requesta.
 ### Tabela `offers` (snapshot po run-u)
 `id, run_id, source, villa, villa_key, unit_type ('1/2'|'1/3'|'1/4'), date_from,
 date_to, nights, price_per_person, ppp_per_night, transport_type ('own'|'package'),
-is_package (bool, zvezdica), distance_to_beach (text|null), parking (text|null),
-ac ('included'|'surcharge'|null), scraped_at`
+is_package (bool, zvezdica), url, scraped_at`
+
+(Klima/parking/udaljenost se NE skrejpuju — korisnik to proverava sam. Zato ni
+detaljne strane po ponudi ne treba povlačiti; skrejpuje se samo lista.)
 
 ### Tabela `offer_state` (poslednje viđeno stanje po ključu)
 `dedup_key (PK), source, last_price, last_seen_at, first_seen_at` — koristi se za
@@ -177,8 +179,7 @@ Ako nema nove ponude ni pada cene → **ništa se ne šalje**.
 Ponude sa `ppp_per_night < 38` dobijaju ⭐ oznaku u poruci (ispod reference).
 
 Format alert poruke (po objektu): vila, tip jedinice, termin (od–do), broj noći,
-cena po osobi (sopstveni), ukupno za dvoje, ppp/noć, ⭐ ako ispod praga, udaljenost
-od plaže, parking, klima, izvor(i), link.
+cena po osobi (sopstveni), ukupno za dvoje, ppp/noć, ⭐ ako ispod praga, izvor(i), link.
 
 ## 12. Otpornost & per-sajt fail alerti
 
@@ -235,9 +236,8 @@ THRESHOLD_PPPPN (default 38, samo za ⭐ oznaku), HEARTBEAT_HOUR (default 8)`
 - Tačan markup svakog sajta nije poznat unapred; fixture-i se prave povlačenjem
   živih stranica tokom implementacije. Ako je sajt dole ili promeni markup u toku
   rada, to se eksplicitno javlja (kroz health/per-sajt alert), ne prećutkuje.
-- Detaljne strane po vili na agregatoru možda zahtevaju dodatni GET po ponudi za
-  polja kao klima/parking/udaljenost; ako neko polje nije dostupno bez toga, snima se
-  `null` a ne izmišlja. Playwright fallback samo ako neki izvor stvarno bude čist JS.
+- Skrejpuje se **samo lista** (bez detaljnih strana po ponudi) — klima/parking/
+  udaljenost se ne prikupljaju. Playwright fallback samo ako neki izvor bude čist JS.
 - Za sada nijedan izvor ne zahteva Playwright (agregator je server-renderovan).
 - Sistem je **potrošan** — cilj je da izdrži par nedelja dok se ne rezerviše, ne
   godinama; bias ka jednostavnosti umesto dugoročne robusnosti.
