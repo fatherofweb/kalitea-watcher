@@ -37,32 +37,54 @@ function iso(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
-// Polazak može imati VIŠE datuma u jednom stringu: "18. i 28. jul", "18, 28. jul".
-// Vraća listu ISO datuma (mesec se deli između svih dana). Prazna lista ako ništa.
+// Polazak može imati VIŠE datuma u jednom stringu, u raznim varijantama:
+//   "19. jul"                → jedan
+//   "18. i 28. jul"          → 2 dana, deljeni mesec
+//   "18, 23. i 28. jul"      → 3+ dana, deljeni mesec
+//   "28. jul i 04. avgust"   → različiti meseci
+//   "28.07 i 04.08"          → numerički višestruki
+// Nikad ne baca — vraća listu ISO datuma (prazna ako ništa nije parsabilno).
 export function parseDepartures(input: string, year: number): string[] {
   const text = input.trim();
-  // imenovani mesec na kraju: "18. i 28. jul" → mesec "jul", dani 18 i 28
-  const trailingMonth = text.match(/([a-zčćšđž]+)\s*$/i);
-  if (trailingMonth) {
-    const month = trailingMonth[1]!;
-    const daysPart = text.slice(0, trailingMonth.index);
-    const days = daysPart.match(/\d{1,2}/g) ?? [];
-    if (days.length > 0) {
-      const out: string[] = [];
-      for (const d of days) {
-        try {
-          out.push(parseSerbianDate(`${d}. ${month}`, year));
-        } catch {
-          // preskoči nevalidan dan
-        }
-      }
-      if (out.length > 0) return out;
+  if (!text) return [];
+  // razdvoj po separatorima: i / ili / , / ; / / / & / +
+  const parts = text
+    .split(/\s*(?:,|;|\/|&|\+|\bili\b|\bi\b)\s*/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const segments = parts.length > 0 ? parts : [text];
+
+  const monthOf = (s: string): string | null => {
+    const m = s.match(/([a-zčćšđž]{3,})\s*$/i);
+    return m ? m[1]! : null;
+  };
+  const dayOnly = (s: string): string | null => {
+    const m = s.match(/^\s*(\d{1,2})\.?\s*$/);
+    return m ? m[1]! : null;
+  };
+
+  const out: string[] = [];
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i]!;
+    // 1) fragment koji se sam parsira (ima mesec ili je numerički "28.07")
+    try {
+      out.push(parseSerbianDate(seg, year));
+      continue;
+    } catch {
+      // nastavi
+    }
+    // 2) goli dan ("18") → pozajmi mesec od sledećeg (pa prethodnog) fragmenta
+    const day = dayOnly(seg);
+    if (!day) continue;
+    let month: string | null = null;
+    for (let j = i + 1; j < segments.length && !month; j++) month = monthOf(segments[j]!);
+    for (let j = i - 1; j >= 0 && !month; j--) month = monthOf(segments[j]!);
+    if (!month) continue;
+    try {
+      out.push(parseSerbianDate(`${day}. ${month}`, year));
+    } catch {
+      // preskoči
     }
   }
-  // jedan datum (numerički "03.08" ili sl.)
-  try {
-    return [parseSerbianDate(text, year)];
-  } catch {
-    return [];
-  }
+  return [...new Set(out)];
 }

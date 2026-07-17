@@ -26,6 +26,24 @@ test('parseDepartures: comma-separated "18, 28. avgust"', () => {
 test('parseDepartures: numeric single "03.08"', () => {
   expect(parseDepartures('03.08', 2026)).toEqual(['2026-08-03']);
 });
-test('parseDepartures: unparseable → empty', () => {
+test('parseDepartures: three days sharing month "18, 23. i 28. jul"', () => {
+  expect(parseDepartures('18, 23. i 28. jul', 2026)).toEqual(['2026-07-18', '2026-07-23', '2026-07-28']);
+});
+test('parseDepartures: different months "28. jul i 04. avgust"', () => {
+  expect(parseDepartures('28. jul i 04. avgust', 2026)).toEqual(['2026-07-28', '2026-08-04']);
+});
+test('parseDepartures: numeric multiple "28.07 i 04.08"', () => {
+  expect(parseDepartures('28.07 i 04.08', 2026)).toEqual(['2026-07-28', '2026-08-04']);
+});
+test('parseDepartures: "ili" separator + slash', () => {
+  expect(parseDepartures('18. ili 28. jul', 2026)).toEqual(['2026-07-18', '2026-07-28']);
+  expect(parseDepartures('18 / 28. avgust', 2026)).toEqual(['2026-08-18', '2026-08-28']);
+});
+test('parseDepartures: dedupes repeats', () => {
+  expect(parseDepartures('18. i 18. jul', 2026)).toEqual(['2026-07-18']);
+});
+test('parseDepartures: unparseable → empty (never throws)', () => {
   expect(parseDepartures('Maj - Oktobar', 2026)).toEqual([]);
+  expect(parseDepartures('', 2026)).toEqual([]);
+  expect(parseDepartures('blabla', 2026)).toEqual([]);
 });
