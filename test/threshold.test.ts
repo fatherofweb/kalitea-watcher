@@ -20,9 +20,9 @@ const o = (p: Partial<DedupedOffer>): DedupedOffer => ({
   ...p,
 });
 
-test('relevant = own + 1/2', () => {
+test('relevant = 1/2 (transport not filtered)', () => {
   expect(isRelevant(o({}))).toBe(true);
-  expect(isRelevant(o({ transportType: 'package' }))).toBe(false);
+  expect(isRelevant(o({ transportType: 'package' }))).toBe(true); // prevoz se ne filtrira
   expect(isRelevant(o({ unitType: '1/3' }))).toBe(false);
 });
 test('below threshold', () => {

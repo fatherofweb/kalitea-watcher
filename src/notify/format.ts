@@ -17,12 +17,17 @@ export function formatAlert(a: Alert, threshold: number): string {
     a.kind === 'price_drop' && a.previousPrice !== undefined
       ? `Cena/os: ~${a.previousPrice}~ → *${o.pricePerPerson} €*`
       : `Cena/os: *${o.pricePerPerson} €*`;
+  const transportLine =
+    o.transportType === 'own'
+      ? 'Prevoz: sopstveni'
+      : 'Prevoz: cena je za autobus — proveri sopstveni u programu';
   return [
     `${head}${star}`,
     `*${o.villa}* (${o.unitType})`,
     `Termin: ${o.dateFrom} → ${o.dateTo} (${o.nights} noći)`,
     priceLine,
     `Za dvoje: *${forTwo} €*  |  ${o.pppPerNight} €/os/noć`,
+    transportLine,
     `Izvor: ${o.sources.join(', ')}`,
     o.url,
   ].join('\n');
