@@ -11,6 +11,7 @@ import { loadHealth, saveHealth, applyResult, classifyFailure } from './store/he
 import { sendTelegram } from './notify/telegram.js';
 import {
   formatAlert,
+  formatBatchSummary,
   formatSourceFailure,
   formatRecovery,
   formatEscalation,
@@ -71,9 +72,16 @@ async function main(): Promise<void> {
   const alertState = DRY ? new Map() : await loadAlertState();
   const alerts = computeAlerts(relevant, offerState, alertState);
 
-  for (const a of alerts) {
-    await notify(formatAlert(a, THRESHOLD));
-    if (!DRY) await recordAlerted(a.offer.dedupKey, a.offer.pricePerPerson);
+  // Puno alerta odjednom (npr. prvi put sa novim izvorom) → jedan sažetak, ne stotine poruka.
+  const BATCH_LIMIT = 6;
+  if (alerts.length > BATCH_LIMIT) {
+    await notify(formatBatchSummary(alerts, THRESHOLD));
+    if (!DRY) for (const a of alerts) await recordAlerted(a.offer.dedupKey, a.offer.pricePerPerson);
+  } else {
+    for (const a of alerts) {
+      await notify(formatAlert(a, THRESHOLD));
+      if (!DRY) await recordAlerted(a.offer.dedupKey, a.offer.pricePerPerson);
+    }
   }
 
   if (!DRY) {

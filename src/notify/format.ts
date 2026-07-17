@@ -50,6 +50,27 @@ export function formatAllFailed(sources: string[]): string {
   return `‼️ SVI izvori pali u ovom runu: ${sources.join(', ')}. Nešto globalno ne valja.`;
 }
 
+// Kad run proizvede puno alerta (npr. prvi put kad se doda izvor sa 100+ termina),
+// šalje se JEDAN sažetak umesto stotine poruka — najjeftinije prvo.
+export function formatBatchSummary(alerts: Alert[], threshold: number): string {
+  const n = alerts.length;
+  const bySource = new Map<string, number>();
+  for (const a of alerts) {
+    const s = a.offer.sources.join(',');
+    bySource.set(s, (bySource.get(s) ?? 0) + 1);
+  }
+  const srcLine = [...bySource.entries()].map(([s, c]) => `${s}: ${c}`).join(', ');
+  const top = alerts.slice().sort((a, b) => a.offer.pppPerNight - b.offer.pppPerNight).slice(0, 8);
+  const lines = top.map((a) => {
+    const o = a.offer;
+    const star = o.pppPerNight < threshold ? ' ⭐' : '';
+    const tr = o.transportType === 'own' ? 'sopstveni' : 'autobus';
+    return `• ${o.villa} — ${o.pricePerPerson}€/os (${o.pppPerNight}/noć) ${o.dateFrom}→${o.dateTo} [${tr}]${star}`;
+  });
+  const tail = n > top.length ? [`…i još ${n - top.length}. Sve zabeleženo — javiću na svaki pad cene.`] : [];
+  return [`🆕 ${n} novih/jeftinijih ponuda (${srcLine})`, 'Najjeftinije:', ...lines, ...tail].join('\n');
+}
+
 export function formatHeartbeat(count: number, best: DedupedOffer | null): string {
   const bestLine = best
     ? `Najbolje: ${best.villa} — ${best.pricePerPerson} €/os (${best.pppPerNight}/noć)`
