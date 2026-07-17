@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import type { RawOffer } from '../core/types.js';
 import type { SourceAdapter } from './types.js';
 import { fetchHtml, jitterDelay } from './http.js';
-import { parseSerbianDate } from '../core/dates.js';
+import { parseDepartures } from '../core/dates.js';
 
 const BASE = 'https://www.lastminuteponude.com';
 const YEAR = 2026;
@@ -84,27 +84,23 @@ export function parseListing(html: string): RawOffer[] {
         ? 'own'
         : 'package';
 
-    let dateFrom = departure;
-    let dateTo = '';
-    try {
-      dateFrom = parseSerbianDate(departure, YEAR);
-      dateTo = addNights(dateFrom, nights);
-    } catch {
-      // datum polaska nije konkretan (npr. "Maj - Oktobar") — zadrži sirov tekst
+    const villaLabel = `${villa}${agency && agency !== 'lastminuteponude' ? ` [${agency}]` : ''}`;
+    // Polazak može biti višestruk ("18. i 28. jul") → jedna ponuda po datumu.
+    const departures = parseDepartures(departure, YEAR);
+    for (const dateFrom of departures) {
+      offers.push({
+        source: 'lastminuteponude',
+        villa: villaLabel,
+        unitType,
+        dateFrom,
+        dateTo: addNights(dateFrom, nights),
+        nights,
+        pricePerPerson,
+        transportType,
+        isPackage: transportType === 'package',
+        url,
+      });
     }
-
-    offers.push({
-      source: 'lastminuteponude',
-      villa: `${villa}${agency && agency !== 'lastminuteponude' ? ` [${agency}]` : ''}`,
-      unitType,
-      dateFrom,
-      dateTo,
-      nights,
-      pricePerPerson,
-      transportType,
-      isPackage: transportType === 'package',
-      url,
-    });
   });
 
   return offers;

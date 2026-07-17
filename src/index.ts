@@ -2,7 +2,7 @@ import { adapters } from './sources/registry.js';
 import { normalize } from './core/normalize.js';
 import { dedupe } from './core/dedupe.js';
 import { computeAlerts } from './core/diff.js';
-import { isRelevant, isFutureDeparture } from './core/threshold.js';
+import { isRelevant, isFutureDeparture, hasIsoDates } from './core/threshold.js';
 import type { RawOffer, DedupedOffer } from './core/types.js';
 import { createRun, insertOffers, finishRun } from './store/snapshot.js';
 import { loadOfferState, upsertOfferState } from './store/offerState.js';
@@ -66,7 +66,11 @@ async function main(): Promise<void> {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const deduped = dedupe(collected.map(normalize));
+  const allDeduped = dedupe(collected.map(normalize));
+  // Odbaci ponude sa neispravnim datumom (npr. "18. i 28. jul") — baza traži validan ISO.
+  const deduped = allDeduped.filter(hasIsoDates);
+  const droppedDates = allDeduped.length - deduped.length;
+  if (droppedDates > 0) console.log(`Preskočeno ${droppedDates} ponuda sa neparsabilnim datumom.`);
   // relevantno = 1/2 jedinica + polazak u budućnosti (sajtovi drže celu sezonu)
   const relevant = deduped.filter((o) => isRelevant(o) && isFutureDeparture(o.dateFrom, today));
 

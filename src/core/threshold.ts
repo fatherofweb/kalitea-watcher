@@ -17,3 +17,10 @@ export function isFutureDeparture(dateFrom: string, todayISO: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) return true;
   return dateFrom >= todayISO;
 }
+
+// Baza ima `date` kolone (not null) — ponuda mora imati OBA validna ISO datuma.
+// Neparsabilni polasci (npr. "18. i 28. jul") se odbacuju umesto da sruše run.
+export function hasIsoDates(o: DedupedOffer): boolean {
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  return iso.test(o.dateFrom) && iso.test(o.dateTo);
+}

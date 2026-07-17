@@ -36,3 +36,33 @@ export function parseSerbianDate(input: string, year: number): string {
 function iso(y: number, m: number, d: number): string {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
+
+// Polazak može imati VIŠE datuma u jednom stringu: "18. i 28. jul", "18, 28. jul".
+// Vraća listu ISO datuma (mesec se deli između svih dana). Prazna lista ako ništa.
+export function parseDepartures(input: string, year: number): string[] {
+  const text = input.trim();
+  // imenovani mesec na kraju: "18. i 28. jul" → mesec "jul", dani 18 i 28
+  const trailingMonth = text.match(/([a-zčćšđž]+)\s*$/i);
+  if (trailingMonth) {
+    const month = trailingMonth[1]!;
+    const daysPart = text.slice(0, trailingMonth.index);
+    const days = daysPart.match(/\d{1,2}/g) ?? [];
+    if (days.length > 0) {
+      const out: string[] = [];
+      for (const d of days) {
+        try {
+          out.push(parseSerbianDate(`${d}. ${month}`, year));
+        } catch {
+          // preskoči nevalidan dan
+        }
+      }
+      if (out.length > 0) return out;
+    }
+  }
+  // jedan datum (numerički "03.08" ili sl.)
+  try {
+    return [parseSerbianDate(text, year)];
+  } catch {
+    return [];
+  }
+}
