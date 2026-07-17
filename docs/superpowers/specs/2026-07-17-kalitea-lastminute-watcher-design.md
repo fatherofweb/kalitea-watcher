@@ -241,3 +241,24 @@ THRESHOLD_PPPPN (default 38, samo za ⭐ oznaku), HEARTBEAT_HOUR (default 8)`
 - Za sada nijedan izvor ne zahteva Playwright (agregator je server-renderovan).
 - Sistem je **potrošan** — cilj je da izdrži par nedelja dok se ne rezerviše, ne
   godinama; bias ka jednostavnosti umesto dugoročne robusnosti.
+
+---
+
+## 18. Implementaciona realnost (dodato posle izgradnje)
+
+Tokom implementacije, provera živog agregatora otkrila je da se dizajn mora prilagoditi:
+
+- **Detaljne strane su AngularJS + „cenovnik u programu putovanja".** Precizan cenovnik
+  po terminu za sopstveni prevoz NIJE u HTML-u (renderuje se klijentski / stoji u PDF
+  programu). Zato se ne parsiraju detaljne strane.
+- **Parsiraju se SSR teaser kartice** (`ponuda_rezultat_<id>`) sa Kalitea listinga:
+  vila, agencija, tip 1/2, broj noćenja, datum polaska, cena/os, link.
+- **Prikazana cena je često autobuski prevoz** (klasična „zamka" iz briefa). Zato:
+  `transportType` se detektuje iz opisa; poruka jasno kaže na koji se prevoz cena
+  odnosi i, kad je autobus, savetuje proveru sopstveni cene u programu.
+- **Relevantnost relaksirana na `unitType === '1/2'`** (prevoz se prikazuje, ne
+  filtrira), jer sopstveni cena nije objavljena u kartici. Alat je „signal da odeš da
+  pogledaš", uz link.
+- **Bez Playwright-a** — sve je čist HTTP + Cheerio. Verifikovano `scrape:dry`-om uživo.
+- Trenutno agregator ima malo Kalitea kartica; agencijski izvori (registry) se dodaju
+  kasnije za širu pokrivenost.
