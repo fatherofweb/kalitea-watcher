@@ -72,16 +72,26 @@ async function main(): Promise<void> {
   const alertState = DRY ? new Map() : await loadAlertState();
   const alerts = computeAlerts(relevant, offerState, alertState);
 
-  // Puno alerta odjednom (npr. prvi put sa novim izvorom) → jedan sažetak, ne stotine poruka.
+  // lastminuteponude je prioritet — uvek puna, zasebna poruka (nikad u batch).
+  // Ostali izvori: ako je puno novih odjednom → jedan sažetak, ne stotine poruka.
+  const PRIORITY = 'lastminuteponude';
   const BATCH_LIMIT = 6;
-  if (alerts.length > BATCH_LIMIT) {
-    await notify(formatBatchSummary(alerts, THRESHOLD));
-    if (!DRY) for (const a of alerts) await recordAlerted(a.offer.dedupKey, a.offer.pricePerPerson);
-  } else {
-    for (const a of alerts) {
+  const priority = alerts.filter((a) => a.offer.sources.includes(PRIORITY));
+  const rest = alerts.filter((a) => !a.offer.sources.includes(PRIORITY));
+
+  const sendIndividual = async (list: typeof alerts): Promise<void> => {
+    for (const a of list) {
       await notify(formatAlert(a, THRESHOLD));
       if (!DRY) await recordAlerted(a.offer.dedupKey, a.offer.pricePerPerson);
     }
+  };
+
+  await sendIndividual(priority);
+  if (rest.length > BATCH_LIMIT) {
+    await notify(formatBatchSummary(rest, THRESHOLD));
+    if (!DRY) for (const a of rest) await recordAlerted(a.offer.dedupKey, a.offer.pricePerPerson);
+  } else {
+    await sendIndividual(rest);
   }
 
   if (!DRY) {
