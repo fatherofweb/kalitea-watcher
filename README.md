@@ -7,13 +7,24 @@ Vrti se na **GitHub Actions cron-u** svakih 30 min.
 
 > Potrošan alat — namenjen da radi par nedelja dok ne rezervišeš, ne zauvek.
 
+## Izvori
+
+- **lastminuteponude.com** (agregator) — teaser kartice: vila, agencija, tip 1/2,
+  noći, datum, cena/os, link. Cena je često autobuska (poruka to naznači).
+- **clocktravel.rs** — cenovna matrica po vili; izvodi **PRAVU sopstveni cenu**
+  (baza − 30€, −20€ za akcijske/`*` termine) za 1/2 jedinice, 11 Kalitea vila.
+
+Dodavanje novog izvora = jedan adapter u `src/sources/` + upis u `registry.ts`.
+Svaki adapter je izolovan (`try/catch`) — jedan padne, ostali rade.
+
 ## Šta radi
 
-- Parsira teaser kartice za Kaliteu (vila, agencija, tip **1/2**, broj noćenja, datum
-  polaska, cena/os, link). Dedup preko više listing strana.
+- Dedup preko svih izvora po (vila + tip + termin + prevoz); najniža cena pobeđuje.
 - Alert na **novu ponudu** ili **pad cene** (poređenje po ključu vs poslednje viđeno
   stanje). Ne re-šalje isto na istoj ceni.
-- Ponude ispod **38 €/os/noć** (tvoja referenca od 380 za 10 noći) dobijaju ⭐.
+- **Batch sažetak:** ako run ima >6 novih (npr. prvi put sa novim izvorom), šalje
+  jednu sažetu poruku (najjeftinije prvo), ne stotine.
+- Ponude ispod **38 €/os/noć** (referenca 380 za 10 noći) dobijaju ⭐.
 - Per-sajt **fail/blokada/markup-change/oporavak** poruke + dnevni heartbeat.
 
 ## ⚠️ Važno ograničenje (pošteno)
