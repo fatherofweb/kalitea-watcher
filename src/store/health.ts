@@ -25,6 +25,10 @@ export function classifyFailure(err: unknown): FailureType {
   return 'fetch';
 }
 
+// Debounce: „pao" alert tek na 2. uzastopni pad (jedan prolazni blip se ne javlja).
+// Oporavak se javlja samo ako je izvor bio prijavljen kao pao (>= 2 pada).
+const DOWN_AFTER = 2;
+
 export function applyResult(
   prev: HealthRow,
   ok: boolean,
@@ -35,7 +39,7 @@ export function applyResult(
     return {
       source: prev.source,
       becameFailing: false,
-      recovered: prev.consecutiveFailures > 0,
+      recovered: prev.consecutiveFailures >= DOWN_AFTER,
       consecutiveFailures: 0,
       reachedThreshold: false,
     };
@@ -43,7 +47,7 @@ export function applyResult(
   const cf = prev.consecutiveFailures + 1;
   return {
     source: prev.source,
-    becameFailing: prev.consecutiveFailures === 0,
+    becameFailing: cf === DOWN_AFTER,
     recovered: false,
     consecutiveFailures: cf,
     reachedThreshold: cf >= 3,

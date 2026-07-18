@@ -8,18 +8,27 @@ test('OK->OK no transition', () => {
   expect(t.becameFailing).toBe(false);
   expect(t.recovered).toBe(false);
 });
-test('OK->FAIL becomes failing', () => {
+test('single blip does NOT alert (debounce)', () => {
   const t = applyResult(prev, false, 0, 'fetch');
-  expect(t.becameFailing).toBe(true);
+  expect(t.becameFailing).toBe(false); // 1. pad → tišina
   expect(t.consecutiveFailures).toBe(1);
   expect(t.failureType).toBe('fetch');
+});
+test('OK->FAIL alerts on 2nd consecutive', () => {
+  const t = applyResult({ ...prev, consecutiveFailures: 1 }, false, 0, 'fetch');
+  expect(t.becameFailing).toBe(true); // 2. uzastopni pad → „pao"
+  expect(t.consecutiveFailures).toBe(2);
+});
+test('single blip then recover does NOT send recovery', () => {
+  const t = applyResult({ ...prev, consecutiveFailures: 1 }, true, 4);
+  expect(t.recovered).toBe(false); // nije ni prijavljen kao pao
 });
 test('3rd consecutive reaches threshold', () => {
   const t = applyResult({ ...prev, consecutiveFailures: 2 }, false, 0, 'block');
   expect(t.consecutiveFailures).toBe(3);
   expect(t.reachedThreshold).toBe(true);
 });
-test('FAIL->OK recovers', () => {
+test('FAIL(>=2)->OK recovers', () => {
   const t = applyResult({ ...prev, consecutiveFailures: 2 }, true, 4);
   expect(t.recovered).toBe(true);
   expect(t.consecutiveFailures).toBe(0);
