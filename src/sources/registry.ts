@@ -4,6 +4,7 @@ import { clocktravel } from './clocktravel.js';
 import { oktopod } from './oktopod.js';
 import { halotours } from './halotours.js';
 import { hellenatravel } from './hellenatravel.js';
+import { hedonictravel } from './hedonictravel.js';
 
 export const adapters: SourceAdapter[] = [
   lastminuteponude,
@@ -11,4 +12,5 @@ export const adapters: SourceAdapter[] = [
   oktopod,
   halotours,
   hellenatravel,
+  hedonictravel,
 ];
